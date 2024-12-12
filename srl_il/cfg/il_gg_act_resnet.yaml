@@ -18,7 +18,7 @@ pipeline:
 dataset_cfg:
   data:
     _target_: srl_il.dataset.gg_dataset.gg_train_val_test
-    data_directory: Data/srl/cube_relocation_processed # TODO: Adjust to the correct data directory
+    data_directory: /home/ubuntu/workspace/il_data # TODO: Adjust to the correct data directory
     test_fraction: 0.1
     val_fraction: 0.1
     window_size_train: 20
