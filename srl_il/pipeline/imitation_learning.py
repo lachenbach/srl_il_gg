@@ -57,6 +57,9 @@ class ImitationLearningPipeline(Pipeline, AlgoMixin, DatasetMixin, Lr_SchedulerM
         """
         checkpoint = self.algo.serialize()
         torch.save(checkpoint, filepath)
+        artifact = wandb.Artifact("best_model", type="model")
+        artifact.add_file(filepath)
+        wandb.log_artifact(artifact)
 
     def load_checkpoint(self, filepath):
         """Loads a checkpoint to restart training from a previous point
