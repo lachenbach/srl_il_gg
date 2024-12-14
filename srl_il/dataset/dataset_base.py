@@ -261,6 +261,7 @@ def get_train_val_test_seq_datasets(
         Validation set is sampled from the same trajectories as the train set
         Test set is sampled from the remaining trajectories.
     """
+    print("Length traj dataset: ", len(traj_dataset))
     N_trajs = len(traj_dataset)
     if test_fraction == 0:
         train_traj_dataset = traj_dataset

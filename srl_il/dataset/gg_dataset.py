@@ -28,6 +28,7 @@ class GGTrajectorySequenceDataset(TrajectoryDataset):
 
         # Iterate over all the files to find that keys in all files
         for f in glob(str(data_directory / "*.h5")):
+            print(f)
             with h5py.File(f, "r", swmr=True, libver='latest') as h5_file:
                 # check what datasets are there in this file
                 try:
@@ -150,3 +151,8 @@ class gg_train_val_test:
             pad_type = pad_type,
             random_seed = random_seed
         )
+
+        print(f"Total dataset size: {len(self.sequence_dataset)}")
+        print(f"Train dataset size: {len(self.train_data)}")
+        print(f"Validation dataset size: {len(self.val_data)}")
+        print(f"Test dataset size: {len(self.test_data)}")
