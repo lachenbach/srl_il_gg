@@ -7,3 +7,4 @@ runs
 Data
 .vscode/settings.json
 Dockerfile
+/data
