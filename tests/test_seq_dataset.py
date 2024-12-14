@@ -183,4 +183,4 @@ class TestModule1(unittest.TestCase):
             self.assertEqual(batch_traj_tuple["gkey1"].shape, (3, 4))
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)
