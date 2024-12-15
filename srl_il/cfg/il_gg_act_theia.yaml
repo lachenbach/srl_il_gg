@@ -2,7 +2,7 @@ defaults:
   # presets do not directly configs the pipeline or the algothm. However it provides necessary information to resolve this config
   - _self_
 
-batch_size: 100 # Default: 100
+batch_size: 128 # Default: 100
 seed: 43
 debugrun: false
 wandb_cfg:
@@ -18,7 +18,7 @@ pipeline:
 dataset_cfg:
   data:
     _target_: srl_il.dataset.gg_dataset.gg_train_val_test
-    data_directory: /home/ubuntu/workspace/il_data/masked_data_final #all-sessions-clean  # Clean data
+    data_directory: /home/ubuntu/workspace/il_data/compr-all-sessions # Clean data
     test_fraction: 0.1
     val_fraction: 0.1
     window_size_train: 20
@@ -84,22 +84,23 @@ algo_cfg:
   trainer_cfg:
     loss_params:
       kl_weight: 10
+      loss_type: "L1" # L1 more accurate than L2
     optimizer_cfg:
       act_encoder:
         optm_cls: torch.optim.Adam
-        lr: 0.0001 # default 0.0001 increase with batch size
+        lr: 0.000128 # default 0.0001 increase with batch size
       act_decoder:
         optm_cls: torch.optim.Adam
-        lr: 0.0001
+        lr: 0.000128
       obs_encoder:
         optm_cls: torch.optim.Adam
-        lr: 0.0001
+        lr: 0.000128
       projs:
         optm_cls: torch.optim.Adam
-        lr: 0.0001
+        lr: 0.000128
       embeds:
         optm_cls: torch.optim.Adam
-        lr: 0.0001
+        lr: 0.000128
   obs_encoder_cfg:
     output_dim: 256
     obs_groups_cfg:
@@ -113,28 +114,28 @@ algo_cfg:
       oakd_front_view_images:
         datakeys: ['oakd_front_view_images']
         encoder_cfg:
-          type: crop_resnet18
+          type: crop_theia
           resize_shape: [224, 224]
           crop_shape: null
-          pretrained: true
+          flatten: false
         posemb_cfg:
           type: none
       oakd_side_view_images:
         datakeys: ['oakd_side_view_images']
         encoder_cfg:
-          type:  crop_resnet18
+          type:  crop_theia
           resize_shape: [224, 224]
           crop_shape: null
-          pretrained: true
+          flatten: false
         posemb_cfg:
           type: none
       oakd_wrist_view_images:
         datakeys: ['oakd_wrist_view_images']
         encoder_cfg:
-          type:  crop_resnet18
+          type:  crop_theia
           resize_shape: [224, 224]
           crop_shape: null
-          pretrained: true
+          flatten: false
         posemb_cfg:
           type: none
     group_emb_cfg:
@@ -188,7 +189,7 @@ training_cfg:
     enabled: false
 
   visualization:
-    enabled: false
+    enabled: true
     num_samples: 5
     every_n_epoch: 10
 

@@ -8,6 +8,7 @@ from torchvision import models as vision_models
 import torchvision
 import functools
 from ..models.robomimic_utils.crop_randomizer import CropRandomizer
+from transformers import AutoModel # Check this import
 
 
 class LowdimConcat(nn.Module):
@@ -65,6 +66,7 @@ class ResNet18(nn.Module):
             n_output_channels = 512
         self.output_proj = nn.Linear(n_output_channels, output_dim) # the last block of resnet18 has 512 channels
 
+
     def forward(self, inputs):
         # inputs: (batch, T, C, H, W)
         input_shape = inputs.shape
@@ -77,6 +79,50 @@ class ResNet18(nn.Module):
             x = x.permute(0, 1, 3, 4, 2) # (batch, T, H, W, 512)
         x = self.output_proj(x)
         return x
+
+
+
+class Theia(nn.Module):
+    def __init__(self, output_dim, flatten=False, input_shape=None, use_fast=True):
+        super(Theia, self).__init__()
+        self.theia = AutoModel.from_pretrained(
+            "theaiinstitute/theia-tiny-patch16-224-cdiv",
+            trust_remote_code=True,
+            force_download=True
+        )
+        print(dir(self.theia.config))
+        print("feature_neck_hidden_dim:", self.theia.config.feature_neck_hidden_dim)
+        print("target_feature_sizes:", self.theia.config.target_feature_sizes)
+        print("feature_neck:", self.theia.config.feature_neck)
+        self.flatten = flatten
+        self.output_dim = output_dim
+        self.resize = torchvision.transforms.Resize((224, 224))
+        self.normalize = torchvision.transforms.Normalize(
+            mean=[0.485, 0.456, 0.406],  # Values from your configuration
+            std=[0.229, 0.224, 0.225]
+        )
+        self.n_output_channels = self.theia.config.feature_neck_hidden_dim
+        self.output_proj = nn.Linear(self.n_output_channels, output_dim)
+
+    def forward(self, inputs):
+        # inputs: (batch, T, C, H, W)
+        batch_size, T, C, H, W = inputs.shape
+        inputs = inputs.view(-1, C, H, W)  # (batch*T, C, H, W)
+        inputs = inputs / 255.0
+        inputs = self.resize(inputs)  # Resize images to (C, 224, 224)
+        inputs = self.normalize(inputs)
+        outputs = self.theia(inputs)  # TODO: Does it take pixel_values=inputs or inputs?
+
+        # Use 'pooler_output' if available, else use [CLS] token
+        if hasattr(outputs, 'pooler_output'):
+            x = outputs.pooler_output  # (batch*T, hidden_size)
+        else:
+            x = outputs.last_hidden_state[:, 0, :]  # (batch*T, hidden_size)
+
+        x = x.view(batch_size, T, -1)  # (batch, T, hidden_size)
+        x = self.output_proj(x)  # Project to (batch, T, output_dim)
+        return x
+
 
 class ZeroPosEmb(nn.Module):
     """
@@ -163,6 +209,21 @@ class ObsEncoder:
             steps.append(ResNet18(self.output_dim, 
                             input_channel=cfg.get("input_channel", 3), 
                             pretrained=cfg.get("pretrained", False), 
+                            flatten=cfg.get("flatten", False), 
+                            input_shape=cfg.get("input_shape", cfg["crop_shape"])
+                ))
+            return nn.Sequential(*steps)
+        
+        elif type=="crop_theia":
+            steps = [TrajVisionResizer(
+                    size = cfg["resize_shape"] # h w
+                )]
+            if "crop_shape" in cfg.keys() and cfg["crop_shape"] is not None:
+                steps.append(CropRandomizer(
+                    crop_height = cfg["crop_shape"][0],
+                    crop_width = cfg["crop_shape"][1]
+                ))
+            steps.append(Theia(self.output_dim,
                             flatten=cfg.get("flatten", False), 
                             input_shape=cfg.get("input_shape", cfg["crop_shape"])
                 ))
