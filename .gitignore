@@ -8,3 +8,4 @@ Data
 .vscode/settings.json
 Dockerfile
 /data
+/data_masked

@@ -2,7 +2,7 @@ defaults:
   # presets do not directly configs the pipeline or the algothm. However it provides necessary information to resolve this config
   - _self_
 
-batch_size: 100 # Default: 100
+batch_size: 128 # Default: 100
 seed: 43
 debugrun: false
 wandb_cfg:
@@ -18,7 +18,7 @@ pipeline:
 dataset_cfg:
   data:
     _target_: srl_il.dataset.gg_dataset.gg_train_val_test
-    data_directory: /home/ubuntu/workspace/il_data/compr-all-sessions  # Clean data
+    data_directory: /workspace/srl_il/data/color_masked_final  # Clean data
     test_fraction: 0.1
     val_fraction: 0.1
     window_size_train: 20
@@ -30,7 +30,8 @@ dataset_cfg:
               ['qpos_hand', 'qpos_hand', 0, 1],  
               ['oakd_front_view_images', 'oakd_front_view/color', 0, 1],  
               ['oakd_side_view_images', 'oakd_side_view/color', 0, 1],
-              ['oakd_wrist_view_images', 'oakd_wrist_view/color', 0, 1]  
+              ['oakd_wrist_view_images', 'oakd_wrist_view/color', 0, 1],
+              # ['sensors_data', 'sensors_data', 0, 1]  
               # TODO: Add the wrist camera
               # TODO: Add sensor values
             ] 
@@ -50,7 +51,7 @@ dataset_cfg:
     random_seed: ${seed}
   batch_size: ${batch_size}
   pin_memory: true 
-  num_workers: 2
+  num_workers: 4
 
 
 algo_cfg:
@@ -87,19 +88,19 @@ algo_cfg:
     optimizer_cfg:
       act_encoder:
         optm_cls: torch.optim.Adam
-        lr: 0.0001 # default 0.0001 increase with batch size
+        lr: 0.000128 # default 0.0001 increase with batch size
       act_decoder:
         optm_cls: torch.optim.Adam
-        lr: 0.0001
+        lr: 0.000128
       obs_encoder:
         optm_cls: torch.optim.Adam
-        lr: 0.0001
+        lr: 0.000128
       projs:
         optm_cls: torch.optim.Adam
-        lr: 0.0001
+        lr: 0.000128
       embeds:
         optm_cls: torch.optim.Adam
-        lr: 0.0001
+        lr: 0.000128
   obs_encoder_cfg:
     output_dim: 256
     obs_groups_cfg:
@@ -137,6 +138,13 @@ algo_cfg:
           pretrained: true
         posemb_cfg:
           type: none
+#      sensors_data:
+#        datakeys: ['sensors_data']
+#        encoder_cfg: 
+#          type: lowdim_concat
+#          input_dim_total: 15
+#        posemb_cfg:
+#          type: none
     group_emb_cfg:
       type: "whole_seq_sine" # none, whole_seq_sine, each_group_learned, whole_seq_learned
 
@@ -153,6 +161,7 @@ algo_cfg:
       - ['oakd_front_view_images', 2]
       - ['oakd_side_view_images', 2]
       - ['oakd_wrist_view_images', 2]
+#      - ['sensors_data', 1]
       # TODO: Add sensor data or wrist camera here?
 
 
@@ -221,6 +230,11 @@ normalizer_cfg:
     type: hardcode
     mean: [[[0.485]], [[0.456]], [[0.406]]]
     std: [[[0.229]], [[0.224]], [[0.225]]]
+#  sensors_data:
+#    type: dataset_stats
+#    min_max: true
+#    dataname: sensors_data
+
 
 
 data_augmentation_cfg: # data augmetation is only used for the data loaded from dataset, no simulation data augmentation
